@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Base Daily Check</title>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.min.js"></script>
+</head>
+<body>
+  <h2>Base Daily Check-In</h2>
+  <button onclick="connect()">Connect Wallet</button>
+  <button onclick="checkIn()">Check In</button>
+
+  <p id="status"></p>
+
+  <script>
+    let signer;
+    const contractAddress = "0xE8344363905fe2F03bE34b3Ae9fad591575Db3c5";
+    const abi = [
+      "function checkIn() public"
+    ];
+
+    async function connect() {
+      const provider = new ethers.BrowserProvider(window.ethereum);
+      await provider.send("eth_requestAccounts", []);
+      signer = await provider.getSigner();
+      document.getElementById("status").innerText = "Connected";
+    }
+
+    async function checkIn() {
+      const contract = new ethers.Contract(contractAddress, abi, signer);
+      const tx = await contract.checkIn();
+      document.getElementById("status").innerText = "Transaction sent...";
+      await tx.wait();
+      document.getElementById("status").innerText = "Checked in!";
+    }
+  </script>
+</body>
+</html>
