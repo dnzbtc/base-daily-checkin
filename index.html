@@ -2,7 +2,7 @@
 <html>
 <head>
   <title>Base Daily Check</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.6.2/dist/ethers.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.min.js"></script>
 </head>
 <body>
   <h2>Base Daily Check-In</h2>
@@ -13,24 +13,64 @@
 
   <script>
     let signer;
+    let provider;
+
     const contractAddress = "0xE8344363905fe2F03bE34b3Ae9fad591575Db3c5";
+
     const abi = [
       "function checkIn() public"
     ];
 
     async function connect() {
-      const provider = new ethers.BrowserProvider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      signer = await provider.getSigner();
-      document.getElementById("status").innerText = "Connected";
+      try {
+        if (!window.ethereum) {
+          alert("MetaMask yok. Chrome + MetaMask kullan.");
+          return;
+        }
+
+        provider = new ethers.BrowserProvider(window.ethereum);
+
+        // hesap iste
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+
+        signer = await provider.getSigner();
+
+        // Base network kontrol (chainId: 8453)
+        const network = await provider.getNetwork();
+        if (Number(network.chainId) !== 8453) {
+          await window.ethereum.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: "0x2105" }]
+          });
+        }
+
+        document.getElementById("status").innerText = "Wallet connected ✅";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Connect error ❌";
+      }
     }
 
     async function checkIn() {
-      const contract = new ethers.Contract(contractAddress, abi, signer);
-      const tx = await contract.checkIn();
-      document.getElementById("status").innerText = "Transaction sent...";
-      await tx.wait();
-      document.getElementById("status").innerText = "Checked in!";
+      try {
+        if (!signer) {
+          alert("Önce connect yap");
+          return;
+        }
+
+        const contract = new ethers.Contract(contractAddress, abi, signer);
+
+        const tx = await contract.checkIn();
+
+        document.getElementById("status").innerText = "Tx gönderildi...";
+
+        await tx.wait();
+
+        document.getElementById("status").innerText = "Check-in başarılı ✅";
+      } catch (err) {
+        console.error(err);
+        document.getElementById("status").innerText = "Tx hata ❌";
+      }
     }
   </script>
 </body>
