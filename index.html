@@ -2,7 +2,6 @@
 <html>
 <head>
   <title>Base Daily Check</title>
-  <script src="https://cdn.jsdelivr.net/npm/ethers@6.10.0/dist/ethers.min.js"></script>
 </head>
 <body>
   <h2>Base Daily Check-In</h2>
@@ -12,39 +11,33 @@
   <p id="status"></p>
 
   <script>
-    let signer;
-    let provider;
+    let account = null;
 
     const contractAddress = "0xE8344363905fe2F03bE34b3Ae9fad591575Db3c5";
 
-    const abi = [
-      "function checkIn() public"
-    ];
+    // checkIn function selector (keccak("checkIn()") ilk 4 byte)
+    const data = "0x183ff085";
 
     async function connect() {
       try {
         if (!window.ethereum) {
-          alert("MetaMask yok. Chrome + MetaMask kullan.");
+          alert("MetaMask yok");
           return;
         }
 
-        provider = new ethers.BrowserProvider(window.ethereum);
+        const accounts = await window.ethereum.request({
+          method: "eth_requestAccounts"
+        });
 
-        // hesap iste
-        await window.ethereum.request({ method: "eth_requestAccounts" });
+        account = accounts[0];
 
-        signer = await provider.getSigner();
+        // Base chain'e geç (chainId: 8453)
+        await window.ethereum.request({
+          method: "wallet_switchEthereumChain",
+          params: [{ chainId: "0x2105" }]
+        });
 
-        // Base network kontrol (chainId: 8453)
-        const network = await provider.getNetwork();
-        if (Number(network.chainId) !== 8453) {
-          await window.ethereum.request({
-            method: "wallet_switchEthereumChain",
-            params: [{ chainId: "0x2105" }]
-          });
-        }
-
-        document.getElementById("status").innerText = "Wallet connected ✅";
+        document.getElementById("status").innerText = "Connected ✅";
       } catch (err) {
         console.error(err);
         document.getElementById("status").innerText = "Connect error ❌";
@@ -53,23 +46,24 @@
 
     async function checkIn() {
       try {
-        if (!signer) {
+        if (!account) {
           alert("Önce connect yap");
           return;
         }
 
-        const contract = new ethers.Contract(contractAddress, abi, signer);
+        const tx = await window.ethereum.request({
+          method: "eth_sendTransaction",
+          params: [{
+            from: account,
+            to: contractAddress,
+            data: data
+          }]
+        });
 
-        const tx = await contract.checkIn();
-
-        document.getElementById("status").innerText = "Tx gönderildi...";
-
-        await tx.wait();
-
-        document.getElementById("status").innerText = "Check-in başarılı ✅";
+        document.getElementById("status").innerText = "Tx gönderildi ✅";
       } catch (err) {
         console.error(err);
-        document.getElementById("status").innerText = "Tx hata ❌";
+        document.getElementById("status").innerText = "Tx error ❌";
       }
     }
   </script>
