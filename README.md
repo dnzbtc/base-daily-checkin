@@ -1,5 +1,5 @@
 ## Live Demo
-https://SENIN-LINKIN.vercel.app
+https://base-daily-checkin.vercel.app/
 
 ## Contract
 Base network daily check-in contract
